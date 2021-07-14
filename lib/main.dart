@@ -103,21 +103,93 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  List<Widget> _buildLandscapeContent(MediaQueryData mediaQuery,
+      PreferredSizeWidget appbar, Widget txListWidget) {
+    return [
+      Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            "Show Chart",
+            style: Theme.of(context).textTheme.title,
+          ),
+          Switch.adaptive(
+              value: _showChart,
+              onChanged: (val) {
+                setState(() {
+                  _showChart = val;
+                });
+              })
+        ],
+      ),
+      _showChart
+          ? Container(
+              height: (mediaQuery.size.height -
+                      appbar.preferredSize.height -
+                      mediaQuery.padding.top) *
+                  0.7,
+              child: Chart(_recentTransaction),
+            )
+          : txListWidget,
+    ];
+  }
+
+  List<Widget> _buildPortraitContent(MediaQueryData mediaQuery,
+      PreferredSizeWidget appbar, Widget txListWidget) {
+    return [
+      Container(
+        height: (mediaQuery.size.height -
+                appbar.preferredSize.height -
+                mediaQuery.padding.top) *
+            0.3,
+        child: Chart(_recentTransaction),
+      ),
+      txListWidget
+    ];
+  }
+
+  PreferredSizeWidget _buildIosPlatform(BuildContext context) {
+    return CupertinoNavigationBar(
+      middle: Text(
+        'Personal Expenses',
+      ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          GestureDetector(
+            child: Icon(CupertinoIcons.add),
+            onTap: () => startAddNewTransaction(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  PreferredSizeWidget _buildAndroidPlatform(BuildContext context) {
+    return AppBar(
+      title: Text(
+        'Personal Expenses',
+      ),
+      actions: <Widget>[
+        IconButton(
+          icon: Icon(Icons.add),
+          onPressed: () => startAddNewTransaction(context),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
     final isLandscape = mediaQuery.orientation == Orientation.landscape;
 
-    final appbar=AppBar(
-        title: Text("Personal Expense"),
-        actions: [
-          IconButton(
-              onPressed: () => startAddNewTransaction(context),
-              icon: Icon(Icons.add))
-        ],
-      );
-  
-
+    final PreferredSizeWidget appbar;
+    if (Platform.isIOS) {
+      appbar = _buildIosPlatform(context);
+    } else {
+      appbar = _buildAndroidPlatform(context);
+    }
     final txListWidget = Container(
         height: (mediaQuery.size.height -
                 appbar.preferredSize.height -
@@ -131,55 +203,23 @@ class _MyHomePageState extends State<MyHomePage> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (isLandscape)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  "Show Chart",
-                  style: Theme.of(context).textTheme.title,
-                ),
-                Switch.adaptive(
-                    value: _showChart,
-                    onChanged: (val) {
-                      setState(() {
-                        _showChart = val;
-                      });
-                    })
-              ],
-            ),
+            ..._buildLandscapeContent(mediaQuery, appbar, txListWidget),
           if (!isLandscape)
-            Container(
-              height: (mediaQuery.size.height -
-                      appbar.preferredSize.height -
-                      mediaQuery.padding.top) *
-                  0.3,
-              child: Chart(_recentTransaction),
-            ),
-          if (!isLandscape) txListWidget,
-          if (isLandscape)
-            _showChart
-                ? Container(
-                    height: (mediaQuery.size.height -
-                            appbar.preferredSize.height -
-                            mediaQuery.padding.top) *
-                        0.7,
-                    child: Chart(_recentTransaction),
-                  )
-                : txListWidget,
+            ..._buildPortraitContent(mediaQuery, appbar, txListWidget),
         ],
       ),
     ));
-    
-      return Scaffold(
-        appBar: appbar,
-        body: body,
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-        floatingActionButton: Platform.isIOS
-            ? Container()
-            : FloatingActionButton(
-                child: Icon(Icons.add),
-                onPressed: () => startAddNewTransaction(context),
-              ),
-      );
-    }
+
+    return Scaffold(
+      appBar: appbar,
+      body: body,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButton: Platform.isIOS
+          ? Container()
+          : FloatingActionButton(
+              child: Icon(Icons.add),
+              onPressed: () => startAddNewTransaction(context),
+            ),
+    );
   }
+}
